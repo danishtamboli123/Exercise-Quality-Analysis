@@ -12,4 +12,6 @@ Class A corresponds to the specified execution of the exercise, while the other 
 
 ![Normalised Confusion Matrix](http://groupware.les.inf.puc-rio.br/static/WLE/wle_confusion_matrix.png)
 
+[Git Pages Deployment of This Analysis](https://danishtamboli123.github.io/Exercise-Quality-Analysis/)
+
 The data for this project comes from: [Groupware@LES HAR](http://groupware.les.inf.puc-rio.br/har)
