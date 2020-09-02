@@ -1,0 +1,186 @@
+---
+title: "Exercise prediction and Quality Analysis"
+author: "Danish Tamboli"
+date: "9/2/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Background:
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks.
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. 
+
+They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+### Dataset Download:
+
+Training Data is available here: [Training Data](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)  
+
+Testing Data is available here: [Testing Data](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv)
+
+```{r file check/ download}
+
+# Checking if given training set data is locally available, else to download.
+if(!file.exists("pml-training.csv")){
+        download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",
+                      "pml-training.csv")
+}
+
+# Checking if given testing set data is locally available, else to download.
+if(!file.exists("pml-testing.csv")){
+        download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",
+                      "pml-testing.csv")
+}
+
+```
+
+### Loading and Cleaning of Data:
+
+```{r load & clean data}
+
+library(caret)
+
+main_data <- read.csv("pml-training.csv")
+given_testing <- read.csv("pml-testing.csv")
+
+# Removing variables that have no Variation,as they do not help in the distinction process.
+main_data <- main_data[,-nearZeroVar(main_data)]
+
+# Removing Columns that have NA
+main_data <- main_data[, colSums(is.na(main_data)) == 0]
+
+# Removing Columns with Reading Number,Participant Name and Timestamps as they are of no use to us.
+main_data <- main_data[,-(1:5)]
+
+```
+We will use the given_testing data as a final testing set (Validation).
+
+### Creating Training and Testing Sets:
+
+```{r data partition training / testing}
+
+set.seed(233)
+
+# Dividing the original Training Data (main_data) into Training and Testing sets in 7:3 ratio
+inTrain <- createDataPartition(main_data$classe,p = 0.7, list = FALSE)
+training <- main_data[inTrain,]
+testing <- main_data[-inTrain,]
+
+```
+
+```{r initial plots}
+
+library(ggplot2)
+# Frequency Plot
+ggplot(data = training) + geom_bar(aes(classe,fill=classe)) + labs(x = "Class", y = "Count",
+                                                                   title = "Frequency of Classes")
+
+```
+
+### Prediction Models:
+
+```{r reccurcive partitioning / regression tree}
+
+set.seed(212)
+library(rpart)
+rpmodel <- train(classe ~ .,data = training,method = "rpart")
+
+```
+
+```{r regression tree plot}
+
+library(rattle)
+fancyRpartPlot(rpmodel$finalModel)
+
+```
+
+```{r Random forest Auto (500 Trees)}
+
+library(rpart)
+set.seed(133)
+library(randomForest)
+rfmodel <- train(classe ~ .,data = training,method = "rf",
+                 trControl= trainControl(method = "cv",number = 5, verboseIter = FALSE),allowParallel =TRUE)
+
+rfmodel$finalModel
+
+```
+
+
+```{r Analysing Random Forest Model}
+
+plot(rfmodel$finalModel,main = "Error Vs Number of Trees")
+
+```
+We can clearly see here that after around 100 Trees the Error doesn't change a lot,so we create a new model with just 100 Trees,This will help us in multiple ways:
+
+ * Helps in avoiding Over-fitting of Data
+ * Helps in reduction complexity of algorithm which in turn reduces execution time of the model.
+
+```{r Random forest Optimised (100 Trees)}
+
+set.seed(294)
+rfmodel1 <- train(classe ~ .,data = training,method = "rf",ntree=100,
+                  trControl= trainControl(method = "cv",number = 5, verboseIter = FALSE),allowParallel =TRUE)
+
+rfmodel1$finalModel
+
+```
+
+
+```{r Analysis of 500 Tree Random Forest}
+
+starttime<- Sys.time()
+predictions <- predict(rfmodel,newdata=testing)
+endtime <- Sys.time()
+
+endtime-starttime
+
+confmatrf <- confusionMatrix(predictions,factor(testing$classe))
+print(confmatrf)
+
+five_hundred_tree <- diag(table(predictions,testing$classe))
+
+```
+
+```{r Analysis of 100 Tree Random Forest }
+
+starttime<- Sys.time()
+predictions <- predict(rfmodel1,newdata=testing)
+endtime <- Sys.time()
+
+endtime-starttime
+confmatrf1 <- confusionMatrix(predictions,factor(testing$classe))
+print(confmatrf1)
+one_hundred_tree <- diag(table(predictions,testing$classe))
+
+```
+
+As we see Both the models (500 Trees and 100 Tress) perform very similarly in terms of accuracy but the execution time of the second model (100 Trees) is about 1/3th of that of the Original model (500 Trees).
+
+```{r comparison}
+
+new_data <- data.frame(one_hundred_tree,five_hundred_tree,
+                       as.numeric(table(testing$classe)))
+
+colnames(new_data) <- c("One Hundred Trees","Five Hundred Trees",
+                        "Actual Class Distribution")
+
+knitr::kable(new_data,caption = "Comparison of performance of 500 vs 100 Trees")
+
+```
+We will go along with rfmodel1 (100 Tree Model) as it performs as well as rfmodel (500 Tree model) and considerably better than the Regression Tree model.
+
+### Applying Model to predict given Test dataset.
+
+```{r}
+
+predict_given <- predict(rfmodel1,newdata = given_testing)
+print(predict_given)
+
+```
+
+
+
