@@ -8,8 +8,8 @@ Six young health participants were asked to perform one set of 10 repetitions of
 
 Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. Participants were supervised by an experienced weight lifter to make sure the execution complied to the manner they were supposed to simulate. The exercises were performed by six male participants aged between 20-28 years, with little weight lifting experience. We made sure that all participants could easily simulate the mistakes in a safe and controlled manner by using a relatively light dumbbell (1.25kg).
 
-[Weight lifting Exercise](http://groupware.les.inf.puc-rio.br/static/WLE/on-body-sensing-schema.png)
+![Weight lifting Exercise](http://groupware.les.inf.puc-rio.br/static/WLE/on-body-sensing-schema.png)
 
-[Normalised Confusion Matrix](http://groupware.les.inf.puc-rio.br/static/WLE/wle_confusion_matrix.png)
+![Normalised Confusion Matrix](http://groupware.les.inf.puc-rio.br/static/WLE/wle_confusion_matrix.png)
 
 The data for this project comes from: [Groupware@LES HAR](http://groupware.les.inf.puc-rio.br/har)
